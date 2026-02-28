@@ -1,88 +1,75 @@
-/**
- * AURABET AI - Script de Test & Capture UI Afrofuturiste
- * * Ce script utilise Playwright pour valider le rendu de l'interface
- * et générer une capture d'écran haute définition du tableau de bord.
- */
+AURABET AI 🌍✨
 
-const { chromium } = require('playwright');
+Application React + Tailwind au style Afrofuturiste pour les paris sportifs assistés par l'intelligence artificielle.
 
-(async () => {
-  // Définition de l'URL : Priorité à l'URL de déploiement Vercel, sinon fallback local
-  // Utilisation : DEPLOYMENT_URL=https://mon-app.vercel.app node test_aurabet.js
-  const targetUrl = process.env.DEPLOYMENT_URL || 'https://aurabet-ai.vercel.app'; 
+🚀 Stack Technique
 
-  console.log(`🚀 Initialisation du test AuraBet sur : ${targetUrl}`);
+Frontend : React + Vite
 
-  const browser = await chromium.launch({
-    headless: true,
-    args: [
-      '--no-sandbox', 
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage'
-    ]
-  });
+Design : Tailwind CSS (Glassmorphism & Vibranium Animations)
 
-  // Simulation d'un appareil mobile moderne (iPhone 12 Pro) pour tester le responsive
-  const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
-    deviceScaleFactor: 2,
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Mobile/15E148 Safari/104.1'
-  });
+Icônes : Lucide React
 
-  const page = await browser.newPage();
+Backend : Firebase Auth (Google + Mobile) & Firestore
 
-  try {
-    console.log("📡 Connexion au serveur...");
-    
-    // Tentative de navigation avec gestion des erreurs réseau
-    const response = await page.goto(targetUrl, { 
-      waitUntil: 'networkidle', 
-      timeout: 30000 
-    });
+Tests UI : Playwright
 
-    if (!response || response.status() >= 400) {
-      throw new Error(`Le serveur a répondu avec le statut ${response ? response.status() : 'NULL'}`);
-    }
+✨ Fonctionnalités
 
-    // Validation de l'UI : On attend que l'IA Aura Advisor soit chargée
-    console.log("🧠 Vérification des composants IA (Aura Score)...");
-    await page.waitForSelector('text=Aura Score', { timeout: 15000 });
+Dashboard Aura Score : Suivi dynamique de votre score de parieur.
 
-    // Petit délai supplémentaire pour laisser les animations CSS "glassmorphism" se stabiliser
-    await page.waitForTimeout(2000);
+Grille Live CAF / EPL : Cotes évolutives en temps réel via widget.
 
-    console.log("📸 Capture d'écran en cours (Format HD)...");
-    
-    await page.screenshot({ 
-      path: 'aurabet-afrofuturism-capture.png', 
-      fullPage: false // On capture uniquement le viewport mobile pour plus de clarté
-    });
+Aura Advisor : Algorithme prédictif avec indice de confiance (%) recalculé en continu.
 
-    const title = await page.title();
-    console.log(`✅ Succès ! Titre détecté : ${title}`);
-    console.log("Fichier généré : aurabet-afrofuturism-capture.png");
+Wallet Multi-devises : Support complet pour XOF, GNF et USDT.
 
-  } catch (error) {
-    console.error(`❌ ÉCHEC DU TEST : ${error.message}`);
-    
-    if (error.message.includes('ERR_EMPTY_RESPONSE') || error.message.includes('ECONNREFUSED')) {
-      console.error("\n💡 CONSEIL DE DÉPANNAGE :");
-      console.error("Le serveur local (127.0.0.1) n'est pas accessible dans cet environnement.");
-      console.error("Assurez-vous que 'npm run dev' tourne ou utilisez l'URL de production :");
-      console.error(`DEPLOYMENT_URL=https://aurabet-ai.vercel.app node ${__filename}\n`);
-    }
-    
-    process.exit(1);
-  } finally {
-    await browser.close();
-  }
-})();
+Paiements Mobiles : Simulation d'Orange Money et Wave.
 
-/**
- * RÉSUMÉ DE LA STACK AURABET AI (Documentation intégrée)
- * --------------------------------------------------
- * Fonctionnalités : Aura Score dynamique, Aura Advisor (%), Wallet XOF/GNF/USDT.
- * Firebase : /artifacts/{appId}/users/{userId}/private/profile
- * Déploiement : GitHub Actions + Vercel.
- * Dépannage Proxy : env -u http_proxy -u https_proxy npm install
- */
+📂 Structure des Données (Firestore)
+
+Le projet respecte la hiérarchie suivante pour la persistance :
+
+Public : /artifacts/{appId}/public/data/global_stats
+
+Privé : /artifacts/{appId}/users/{userId}/private/profile
+
+🛠 Installation et Développement Local
+
+Installation :
+
+npm install
+
+
+Configuration :
+Copier .env.example vers .env et renseigner les valeurs Firebase.
+
+Lancement :
+
+npm run dev
+
+
+🧪 Validation et Tests
+
+Vérification de syntaxe
+
+Pour éviter les erreurs Vercel (Unexpected token '/'), assurez-vous que package.json ne contient aucun commentaire :
+
+node scripts/check-package-json.mjs
+
+
+Capture UI Afrofuturiste (Playwright)
+
+Générez une capture d'écran haute définition du tableau de bord :
+
+# Utilise DEPLOYMENT_URL si défini, sinon [https://aurabet-ai.vercel.app](https://aurabet-ai.vercel.app)
+node scripts/capture-afrofuturism.mjs
+
+
+🤖 CI/CD
+
+Workflow CI : .github/workflows/ci.yml (Validation PR et syntaxe).
+
+Déploiement : Déclenchement automatique vers GitHub Pages ou Vercel sur push vers main.
+
+Note : Si vous rencontrez des erreurs de proxy lors de l'installation, utilisez : env -u http_proxy -u https_proxy npm install.

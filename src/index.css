@@ -40,9 +40,10 @@ const { chromium } = require('playwright');
     }
 
     console.log("🧠 Vérification de l'interface (Aura Score)...");
+    // On attend que le texte "Aura Score" apparaisse dans le dashboard
     await page.waitForSelector('text=Aura Score', { timeout: 15000 });
 
-    // Pause pour les animations CSS
+    // Petite pause pour laisser les animations CSS se stabiliser
     await page.waitForTimeout(2000);
 
     console.log("📸 Génération de la capture HD...");

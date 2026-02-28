@@ -6,8 +6,8 @@
 const { chromium } = require('playwright');
 
 (async () => {
-  // Définition de l'URL : Priorité à l'URL de déploiement Vercel, sinon fallback local
-  const targetUrl = process.env.DEPLOYMENT_URL || 'https://aurabet-ai.vercel.app'; 
+  // Définition de l'URL : Priorité à l'URL de déploiement, sinon fallback local
+  const targetUrl = process.env.DEPLOYMENT_URL || 'http://localhost:5173'; 
 
   console.log(`🚀 Initialisation du test AuraBet sur : ${targetUrl}`);
 
@@ -40,9 +40,10 @@ const { chromium } = require('playwright');
     }
 
     console.log("🧠 Vérification de l'interface (Aura Score)...");
+    // On attend que le texte "Aura Score" apparaisse dans le dashboard
     await page.waitForSelector('text=Aura Score', { timeout: 15000 });
 
-    // Pause pour les animations CSS
+    // Petite pause pour laisser les animations CSS se stabiliser
     await page.waitForTimeout(2000);
 
     console.log("📸 Génération de la capture HD...");
@@ -56,7 +57,7 @@ const { chromium } = require('playwright');
   } catch (error) {
     console.error(`❌ ÉCHEC : ${error.message}`);
     if (error.message.includes('ERR_EMPTY_RESPONSE')) {
-      console.error("CONSEIL : Le serveur local est indisponible. Définissez DEPLOYMENT_URL.");
+      console.error("CONSEIL : Le serveur local est indisponible. Lancez 'npm run dev' ou définissez DEPLOYMENT_URL.");
     }
     process.exit(1);
   } finally {
