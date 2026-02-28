@@ -1,68 +1,88 @@
-# AURABET AI
+/**
+ * AURABET AI - Script de Test & Capture UI Afrofuturiste
+ * * Ce script utilise Playwright pour valider le rendu de l'interface
+ * et générer une capture d'écran haute définition du tableau de bord.
+ */
 
-Application React + Tailwind au style Afrofuturiste pour paris sportifs assistés par IA.
+const { chromium } = require('playwright');
 
-## Stack
-- React + Vite
-- Tailwind CSS
-- Lucide Icons
-- Firebase Auth (Google + Phone) + Firestore
+(async () => {
+  // Définition de l'URL : Priorité à l'URL de déploiement Vercel, sinon fallback local
+  // Utilisation : DEPLOYMENT_URL=https://mon-app.vercel.app node test_aurabet.js
+  const targetUrl = process.env.DEPLOYMENT_URL || 'https://aurabet-ai.vercel.app'; 
 
-## Fonctionnalités
-- Dashboard avec **Aura Score dynamique**.
-- Grille live **CAF / EPL** simulée avec cotes évolutives.
-- **Aura Advisor** : moteur de confiance (%) recalculé à chaque cycle.
-- Wallet multi-devises **XOF / GNF / USDT**.
-- Actions de paiement simulées : **Orange Money** et **Wave**.
-- Flux de transactions récentes.
+  console.log(`🚀 Initialisation du test AuraBet sur : ${targetUrl}`);
 
-## Firebase path
-Le helper `userProfileRef` respecte la structure :
-`/artifacts/{appId}/users/{userId}/private/profile`
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--no-sandbox', 
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage'
+    ]
+  });
 
-## Variables d'environnement
-Copier `.env.example` vers `.env` et renseigner les valeurs Firebase.
+  // Simulation d'un appareil mobile moderne (iPhone 12 Pro) pour tester le responsive
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Mobile/15E148 Safari/104.1'
+  });
 
-## Run local
-```bash
-npm install
-npm run dev
-npm run build
-```
+  const page = await browser.newPage();
 
-## CI + Déploiement GitHub
-- Workflow CI : `.github/workflows/ci.yml`
-- Workflow déploiement GitHub Pages : `.github/workflows/deploy-pages.yml`
+  try {
+    console.log("📡 Connexion au serveur...");
+    
+    // Tentative de navigation avec gestion des erreurs réseau
+    const response = await page.goto(targetUrl, { 
+      waitUntil: 'networkidle', 
+      timeout: 30000 
+    });
 
-Le déploiement Pages est déclenché sur `push` vers `main`.
-Le `base` Vite est injecté automatiquement avec `VITE_APP_BASE=/<repo>/` pendant le build CI.
+    if (!response || response.status() >= 400) {
+      throw new Error(`Le serveur a répondu avec le statut ${response ? response.status() : 'NULL'}`);
+    }
 
-### Procédure "git update / deployer / fusionner"
-```bash
-git add .
-git commit -m "chore: update deploy pipeline"
-git push
-```
-Ensuite, ouvrir/mettre à jour la PR GitHub, vérifier CI ✅ puis fusionner.
+    // Validation de l'UI : On attend que l'IA Aura Advisor soit chargée
+    console.log("🧠 Vérification des composants IA (Aura Score)...");
+    await page.waitForSelector('text=Aura Score', { timeout: 15000 });
 
-## Dépannage (403 npm / proxy réseau)
-Si `npm install` échoue (`403 Forbidden` ou `ENETUNREACH`), exécuter :
+    // Petit délai supplémentaire pour laisser les animations CSS "glassmorphism" se stabiliser
+    await page.waitForTimeout(2000);
 
-```bash
-npm run doctor
-```
+    console.log("📸 Capture d'écran en cours (Format HD)...");
+    
+    await page.screenshot({ 
+      path: 'aurabet-afrofuturism-capture.png', 
+      fullPage: false // On capture uniquement le viewport mobile pour plus de clarté
+    });
 
-Puis tester :
+    const title = await page.title();
+    console.log(`✅ Succès ! Titre détecté : ${title}`);
+    console.log("Fichier généré : aurabet-afrofuturism-capture.png");
 
-```bash
-env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY npm install
-```
+  } catch (error) {
+    console.error(`❌ ÉCHEC DU TEST : ${error.message}`);
+    
+    if (error.message.includes('ERR_EMPTY_RESPONSE') || error.message.includes('ECONNREFUSED')) {
+      console.error("\n💡 CONSEIL DE DÉPANNAGE :");
+      console.error("Le serveur local (127.0.0.1) n'est pas accessible dans cet environnement.");
+      console.error("Assurez-vous que 'npm run dev' tourne ou utilisez l'URL de production :");
+      console.error(`DEPLOYMENT_URL=https://aurabet-ai.vercel.app node ${__filename}\n`);
+    }
+    
+    process.exit(1);
+  } finally {
+    await browser.close();
+  }
+})();
 
-Si votre organisation impose un proxy, utilisez un proxy approuvé/configuré avec identifiants valides dans votre `.npmrc`.
-
-
-## Tests unitaires
-```bash
-npm run test:unit
-```
-(Ne dépend pas de l'installation npm complète : utilise le runner natif `node --test`.)
+/**
+ * RÉSUMÉ DE LA STACK AURABET AI (Documentation intégrée)
+ * --------------------------------------------------
+ * Fonctionnalités : Aura Score dynamique, Aura Advisor (%), Wallet XOF/GNF/USDT.
+ * Firebase : /artifacts/{appId}/users/{userId}/private/profile
+ * Déploiement : GitHub Actions + Vercel.
+ * Dépannage Proxy : env -u http_proxy -u https_proxy npm install
+ */
