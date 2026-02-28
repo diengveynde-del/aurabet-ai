@@ -1,0 +1,1 @@
+{"name": "aurabet-ai", "version": "1.0.0", "scripts": {"doctor": "npm doctor", "ci": "npm install --only=production", "test": "npm test"}}
