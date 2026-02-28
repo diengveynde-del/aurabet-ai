@@ -23,7 +23,6 @@ body {
   backdrop-filter: blur(16px);
 }
 
-
 @keyframes pulse-purple {
   0% { border-color: rgba(126, 34, 206, 0.1); }
   50% { border-color: rgba(126, 34, 206, 0.6); }

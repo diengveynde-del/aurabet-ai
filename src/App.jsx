@@ -18,46 +18,6 @@ import {
   User,
 } from 'lucide-react';
 
-const GlobalStyles = () => (
-  <style>{`
-    :root {
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-
-    body {
-      background: radial-gradient(circle at top, #170321 0%, #020202 55%, #010101 100%);
-      color: #f5f5f5;
-      margin: 0;
-      min-height: 100vh;
-    }
-
-    .glass {
-      background: linear-gradient(
-        130deg,
-        rgba(255, 255, 255, 0.1),
-        rgba(255, 255, 255, 0.03)
-      );
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(16px);
-    }
-
-    @keyframes pulse-purple {
-      0% { border-color: rgba(126, 34, 206, 0.1); }
-      50% { border-color: rgba(126, 34, 206, 0.6); }
-      100% { border-color: rgba(126, 34, 206, 0.1); }
-    }
-
-    .animate-pulse-border {
-      animation: pulse-purple 2s infinite;
-    }
-
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-  `}</style>
-);
 
 const resolveFirebaseConfig = () => {
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
@@ -187,7 +147,6 @@ const App = () => {
   if (!user)
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
-        <GlobalStyles />
         <div className="w-12 h-12 border-4 border-[#7e22ce] border-t-transparent rounded-full animate-spin" />
         <div className="text-[#7e22ce] font-black uppercase tracking-[0.3em] text-[10px]">SYNC AURA EN COURS...</div>
       </div>
@@ -195,7 +154,6 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-[#020202] text-white font-sans pb-32 overflow-x-hidden">
-      <GlobalStyles />
 
       {toast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-[#7e22ce] text-white px-6 py-3 rounded-full font-bold text-[10px] uppercase tracking-widest z-[100] shadow-[0_0_30px_rgba(126,34,206,0.5)] animate-bounce">

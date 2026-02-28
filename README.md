@@ -28,6 +28,7 @@ Copier `.env.example` vers `.env` et renseigner les valeurs Firebase.
 npm install
 npm run dev
 npm run build
+npm run ci:verify
 ```
 
 ## CI + Déploiement GitHub
@@ -87,4 +88,12 @@ Si Vercel retourne `Unexpected token '/'` sur `package.json`, vérifier la synta
 
 ```bash
 npm run check:package
+```
+
+
+## Conflits de branche
+Si GitHub indique des conflits sur `ci.yml`, `README.md`, `package.json`, `src/App.jsx` ou `src/index.css`, utilisez cette base comme version canonique puis relancez :
+
+```bash
+npm run ci:verify
 ```

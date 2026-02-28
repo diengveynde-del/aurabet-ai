@@ -16,7 +16,8 @@
     "doctor": "bash scripts/env-doctor.sh",
     "test:unit": "node --test test/*.test.js",
     "capture:ui": "node scripts/capture-afrofuturism.mjs",
-    "check:package": "node scripts/check-package-json.mjs"
+    "check:package": "node scripts/check-package-json.mjs",
+    "ci:verify": "npm run check:package && npm run test:unit"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
