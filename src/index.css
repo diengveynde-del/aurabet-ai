@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -14,18 +14,13 @@ import {
 } from 'firebase/firestore';
 import {
   Activity,
-  ArrowDownRight,
-  ArrowUpRight,
   BrainCircuit,
   CircleDollarSign,
   Coins,
   Landmark,
   ShieldCheck,
-  Smartphone,
   Sparkles,
-  Trophy,
   Wallet,
-  Waves,
   Zap,
   Check,
   X,
@@ -34,7 +29,8 @@ import {
 } from 'lucide-react';
 
 /**
- * RÉSOLUTION DES CONFLITS CSS & STYLES GLOBAUX
+ * GLOBAL STYLES & ANIMATIONS
+ * Merged from the original CSS conflict block
  */
 const GlobalStyles = () => (
   <style>{`
@@ -78,32 +74,28 @@ const GlobalStyles = () => (
       -webkit-appearance: none;
       margin: 0;
     }
+    
+    /* Custom scrollbar for a cleaner UI */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #7e22ce;
+      border-radius: 10px;
+    }
   `}</style>
 );
 
 /**
- * RÉSOLUTION DE LA CONFIGURATION FIREBASE
+ * FIREBASE INITIALIZATION
  */
-const resolveFirebaseConfig = () => {
-  if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-    try {
-      return JSON.parse(__firebase_config);
-    } catch (error) {
-      console.error('Configuration Firebase invalide:', error);
-    }
-  }
+const firebaseConfig = typeof __firebase_config !== 'undefined' 
+  ? JSON.parse(__firebase_config) 
+  : { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
 
-  return {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: "",
-  };
-};
-
-const firebaseConfig = resolveFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -115,11 +107,6 @@ const walletSeed = [
   { currency: 'USDT', amount: 2430.9, symbol: 'USDT', icon: CircleDollarSign },
 ];
 
-const transactionsSeed = [
-  { id: 'tx-1', type: 'deposit', provider: 'Orange Money', currency: 'XOF', amount: 85000, time: '17:11' },
-  { id: 'tx-2', type: 'withdraw', provider: 'Wave', currency: 'XOF', amount: 40000, time: '16:48' },
-];
-
 const App = () => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState({ balance: 15000, auraScore: 700 });
@@ -129,6 +116,7 @@ const App = () => {
   const [selectedCurrency, setSelectedCurrency] = useState('XOF');
   const [walletBalances, setWalletBalances] = useState(walletSeed);
 
+  // External Widget Loader
   useEffect(() => {
     const scriptId = 'api-sports-widget-script';
     if (!document.getElementById(scriptId)) {
@@ -143,6 +131,7 @@ const App = () => {
     }
   }, []);
 
+  // Authentication Setup (Mandatory Rule 3)
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -152,7 +141,7 @@ const App = () => {
           await signInAnonymously(auth);
         }
       } catch (err) {
-        console.error('Erreur Auth:', err);
+        console.error('Auth Error:', err);
       }
     };
     initAuth();
@@ -160,9 +149,11 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
+  // Firestore Data Listener (Mandatory Rules 1 & 2)
   useEffect(() => {
     if (!user) return;
-    const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'private', 'profile');
+    // Note: Using path as per Rule 1 requirements
+    const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
     
     const unsubscribe = onSnapshot(profileRef, (snapshot) => {
       if (snapshot.exists()) {
@@ -172,7 +163,7 @@ const App = () => {
       } else {
         setDoc(profileRef, { balance: 15000, auraScore: 700 });
       }
-    }, (error) => console.error('Erreur Firestore:', error));
+    }, (error) => console.error('Firestore Error:', error));
     
     return () => unsubscribe();
   }, [user]);
@@ -189,11 +180,11 @@ const App = () => {
       return;
     }
     const newBalance = profile.balance - betSlip.amount;
-    const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'private', 'profile');
+    const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
     
     try {
       await setDoc(profileRef, { ...profile, balance: newBalance }, { merge: true });
-      showToast(`Pari de ${betSlip.amount} XOF validé via Widget API !`);
+      showToast(`Pari de ${betSlip.amount} XOF validé via IA !`);
       setBetSlip((prev) => ({ ...prev, active: false }));
     } catch (e) {
       showToast('Erreur lors de la validation.');
@@ -218,6 +209,7 @@ const App = () => {
         </div>
       )}
 
+      {/* Header */}
       <header className="flex justify-between items-center p-6 border-b border-[#7e22ce]/20 bg-[#020202]/80 sticky top-0 z-50 backdrop-blur-xl">
         <div className="flex flex-col">
           <p className="mb-1 inline-flex items-center gap-2 text-[7px] font-semibold uppercase tracking-[0.2em] text-[#22d3ee]">
@@ -236,6 +228,7 @@ const App = () => {
 
       <main className="p-4 space-y-6 max-w-5xl mx-auto">
         <div className="grid gap-6 lg:grid-cols-2">
+          {/* AI Advice Card */}
           <section className="bg-gradient-to-br from-[#121212] to-[#050505] border border-[#7e22ce]/20 rounded-[2rem] p-6 relative overflow-hidden group shadow-2xl animate-pulse-border">
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#7e22ce]/5 blur-[100px] rounded-full" />
             <div className="flex items-center gap-3 mb-5">
@@ -245,16 +238,17 @@ const App = () => {
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Conseiller Aura</h2>
             </div>
             <p className="text-lg font-bold leading-[1.2] mb-6 italic tracking-tight text-white/95">
-              "Le flux live détecte une forte volatilité sur la <span className="text-[#22d3ee]">CAF League</span>. L'algorithme suggère de rester prudent."
+              "Le flux live détecte une forte volatilité sur la <span className="text-[#22d3ee]">CAF League</span>. L'algorithme suggère un pari prudent sur le match en cours."
             </p>
             <button
               onClick={() => setBetSlip((prev) => ({ ...prev, active: true, team: 'Pari IA' }))}
-              className="w-full bg-[#7e22ce] text-white font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(126,34,206,0.4)] transition-all"
+              className="w-full bg-[#7e22ce] text-white font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(126,34,206,0.4)] transition-all active:scale-95"
             >
               <Zap size={14} fill="currentColor" /> Coupon Rapide
             </button>
           </section>
 
+          {/* Wallet Section */}
           <section className="bg-[#0a0a0a] border border-white/5 rounded-[2rem] p-6 glass">
             <div className="flex justify-between items-center mb-4">
               <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
@@ -281,6 +275,7 @@ const App = () => {
           </section>
         </div>
 
+        {/* Live Sports Section */}
         <section className="space-y-4">
           <div className="flex justify-between items-center px-2">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">
@@ -326,7 +321,7 @@ const App = () => {
                   <ShieldCheck size={14} /> Sécurité Blockchain
                 </div>
                 <p>
-                  Les transactions sont sécurisées sur le réseau décentralisé Aurabet via protocole VIBRANIUM.
+                  Les transactions sont sécurisées sur le réseau décentralisé Aurabet via protocole VIBRANIUM. Chaque pari est immuable.
                 </p>
               </div>
             </div>
@@ -334,18 +329,19 @@ const App = () => {
         </section>
       </main>
 
+      {/* Bet Slip Modal */}
       {betSlip.active && (
         <div 
           className="fixed inset-0 bg-black/80 backdrop-blur-md z-[55] flex items-end sm:items-center justify-center p-4"
           onClick={() => setBetSlip(prev => ({ ...prev, active: false }))}
         >
           <div 
-            className="bg-[#0f0f0f] w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl border border-[#7e22ce]/30 animate-in slide-in-from-bottom"
+            className="bg-[#0f0f0f] w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl border border-[#7e22ce]/30 animate-in slide-in-from-bottom duration-300"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-8">
               <h4 className="font-black text-xs uppercase tracking-[0.2em] italic text-[#22d3ee]">Coupon de Pari Pro</h4>
-              <button onClick={() => setBetSlip(prev => ({ ...prev, active: false }))} className="bg-white/5 p-2 rounded-full text-white/40">
+              <button onClick={() => setBetSlip(prev => ({ ...prev, active: false }))} className="bg-white/5 p-2 rounded-full text-white/40 hover:text-white">
                 <X size={20} />
               </button>
             </div>
@@ -375,7 +371,7 @@ const App = () => {
 
             <button
               onClick={confirmBet}
-              className="w-full py-5 bg-[#7e22ce] text-white font-black rounded-3xl uppercase text-[11px] tracking-[0.3em] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all"
+              className="w-full py-5 bg-[#7e22ce] text-white font-black rounded-3xl uppercase text-[11px] tracking-[0.3em] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all hover:brightness-110"
             >
               <Check size={18} /> Valider le Pari
             </button>
@@ -383,12 +379,13 @@ const App = () => {
         </div>
       )}
 
+      {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 bg-[#020202]/90 backdrop-blur-3xl border-t border-white/5 p-4 pb-8 z-[50]">
         <div className="max-w-md mx-auto flex justify-around items-center">
           <NavBtn icon={<LayoutGrid size={20} />} label="Menu" active />
           <NavBtn icon={<Zap size={20} />} label="Live" />
           <div className="relative -mt-14">
-            <button className="bg-gradient-to-tr from-[#7e22ce] to-[#22d3ee] w-14 h-14 rounded-full flex items-center justify-center border-[4px] border-[#020202] shadow-2xl relative z-10 text-white">
+            <button className="bg-gradient-to-tr from-[#7e22ce] to-[#22d3ee] w-14 h-14 rounded-full flex items-center justify-center border-[4px] border-[#020202] shadow-2xl relative z-10 text-white animate-pulse-border">
               <ShieldCheck size={28} />
             </button>
           </div>
@@ -401,7 +398,7 @@ const App = () => {
 };
 
 const NavBtn = ({ icon, label, active = false }) => (
-  <button className={`flex flex-col items-center gap-1.5 ${active ? 'text-[#22d3ee]' : 'text-white/20'}`}>
+  <button className={`flex flex-col items-center gap-1.5 transition-colors ${active ? 'text-[#22d3ee]' : 'text-white/20 hover:text-white/50'}`}>
     {icon}
     <span className="text-[7px] font-black uppercase italic tracking-[0.2em]">{label}</span>
   </button>

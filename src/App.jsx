@@ -30,15 +30,55 @@ import {
   Check,
   X,
   LayoutGrid,
-  User
+  User,
 } from 'lucide-react';
+
+const GlobalStyles = () => (
+  <style>{`
+    :root {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #170321 0%, #020202 55%, #010101 100%);
+      color: #f5f5f5;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    .glass {
+      background: linear-gradient(
+        130deg,
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.03)
+      );
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+    }
+
+    @keyframes pulse-purple {
+      0% { border-color: rgba(126, 34, 206, 0.1); }
+      50% { border-color: rgba(126, 34, 206, 0.6); }
+      100% { border-color: rgba(126, 34, 206, 0.1); }
+    }
+
+    .animate-pulse-border {
+      animation: pulse-purple 2s infinite;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  `}</style>
+);
 
 /**
  * RÉSOLUTION DE LA CONFIGURATION FIREBASE
- * Correction de l'erreur import.meta pour l'environnement cible
+ * Gestion sécurisée des clés d'API et injection d'environnement
  */
 const resolveFirebaseConfig = () => {
-  // Priorité absolue à la configuration injectée par l'environnement
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
     try {
       return JSON.parse(__firebase_config);
@@ -47,7 +87,6 @@ const resolveFirebaseConfig = () => {
     }
   }
 
-  // Fallback sécurisé pour éviter l'erreur import.meta dans les environnements restreints
   return {
     apiKey: "",
     authDomain: "",
@@ -137,13 +176,14 @@ const App = () => {
         setProfile(data);
         setWalletBalances(prev => prev.map(w => w.currency === 'XOF' ? {...w, amount: data.balance} : w));
       } else {
-        // Initialisation du profil si inexistant
         setDoc(profileRef, { balance: 15000, auraScore: 700 });
       }
     }, (error) => console.error('Erreur Firestore:', error));
     
     return () => unsubscribe();
   }, [user]);
+
+  const potentialGain = useMemo(() => Math.floor(betSlip.amount * betSlip.odd), [betSlip.amount, betSlip.odd]);
 
   const showToast = (message) => {
     setToast(message);
@@ -170,6 +210,7 @@ const App = () => {
 
   if (!user) return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
+      <GlobalStyles />
       <div className="w-12 h-12 border-4 border-[#7e22ce] border-t-transparent rounded-full animate-spin" />
       <div className="text-[#7e22ce] font-black uppercase tracking-[0.3em] text-[10px]">SYNC AURA EN COURS...</div>
     </div>
@@ -177,6 +218,8 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-[#020202] text-white font-sans pb-32 overflow-x-hidden">
+      <GlobalStyles />
+      
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-[#7e22ce] text-white px-6 py-3 rounded-full font-bold text-[10px] uppercase tracking-widest z-[100] shadow-[0_0_30px_rgba(126,34,206,0.5)] animate-bounce">
@@ -202,10 +245,9 @@ const App = () => {
       </header>
 
       <main className="p-4 space-y-6 max-w-5xl mx-auto">
-        {/* LIGNE SUPÉRIEURE : CONSEILLER IA & PORTEFEUILLE */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* CONSEILLER AURA */}
-          <section className="bg-gradient-to-br from-[#121212] to-[#050505] border border-[#7e22ce]/20 rounded-[2rem] p-6 relative overflow-hidden group shadow-2xl">
+          <section className="bg-gradient-to-br from-[#121212] to-[#050505] border border-[#7e22ce]/20 rounded-[2rem] p-6 relative overflow-hidden group shadow-2xl animate-pulse-border">
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#7e22ce]/5 blur-[100px] rounded-full" />
             <div className="flex items-center gap-3 mb-5">
               <div className="bg-[#fbbf24]/10 p-2.5 rounded-2xl text-[#fbbf24] border border-[#fbbf24]/20">
@@ -225,7 +267,7 @@ const App = () => {
           </section>
 
           {/* PORTEFEUILLE MULTI-DEVISES */}
-          <section className="bg-[#0a0a0a] border border-white/5 rounded-[2rem] p-6">
+          <section className="bg-[#0a0a0a] border border-white/5 rounded-[2rem] p-6 glass">
             <div className="flex justify-between items-center mb-4">
               <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
                 <Wallet className="text-[#fbbf24]" size={18} /> Portefeuille
@@ -263,8 +305,7 @@ const App = () => {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* WIDGET SCORE EN DIRECT */}
-            <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden min-h-[500px]">
+            <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden min-h-[500px] glass">
               <div 
                 id="wg-api-football-livescore"
                 data-host="v3.football.api-sports.io"
@@ -281,9 +322,8 @@ const App = () => {
               )}
             </div>
 
-            {/* WIDGET LIGUES & INFOS */}
             <div className="space-y-6">
-              <div className="bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden p-4">
+              <div className="bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden p-4 glass">
                 <div 
                   id="wg-api-football-leagues"
                   data-host="v3.football.api-sports.io"
@@ -294,13 +334,11 @@ const App = () => {
                 ></div>
               </div>
               
-              <div className="bg-vibranium/10 border border-[#7e22ce]/20 rounded-[2.5rem] p-6 text-[10px] text-zinc-400">
+              <div className="bg-white/5 border border-[#7e22ce]/20 rounded-[2.5rem] p-6 text-[10px] text-zinc-400 glass">
                 <div className="flex items-center gap-2 text-[#fbbf24] mb-2 font-bold uppercase tracking-widest">
                   <ShieldCheck size={14} /> Sécurité Blockchain
                 </div>
-                <p>
-                  Les transactions sont sécurisées sur le réseau décentralisé Aurabet.
-                </p>
+                <p>Les transactions sont sécurisées sur le réseau décentralisé Aurabet via protocole VIBRANIUM.</p>
               </div>
             </div>
           </div>
@@ -343,7 +381,7 @@ const App = () => {
               </div>
               <div className="flex-[1] bg-white/5 border border-white/5 rounded-3xl px-4 py-5 text-center flex flex-col justify-center">
                 <span className="text-[8px] text-[#fbbf24] font-black uppercase tracking-widest">Gain Est.</span>
-                <p className="text-sm font-black italic mt-1">{Math.floor(betSlip.amount * betSlip.odd).toLocaleString()} F</p>
+                <p className="text-sm font-black italic mt-1">{potentialGain.toLocaleString()} F</p>
               </div>
             </div>
 
