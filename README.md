@@ -80,3 +80,11 @@ DEPLOYMENT_URL=http://127.0.0.1:5173 npm run capture:ui
 ```
 
 Le script produit `aurabet-afrofuturism-capture.png` à la racine du projet.
+
+
+## Diagnostic Vercel package.json
+Si Vercel retourne `Unexpected token '/'` sur `package.json`, vérifier la syntaxe JSON stricte (sans commentaires `//` ou `/** */`) :
+
+```bash
+npm run check:package
+```
