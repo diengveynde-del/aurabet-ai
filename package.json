@@ -1,25 +1,66 @@
-{
-  "name": "aurabet-ai",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "firebase": "^11.6.1",
-    "lucide-react": "^0.475.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "autoprefixer": "^10.4.14",
-    "postcss": "^8.4.24",
-    "tailwindcss": "^3.3.2",
-    "vite": "^4.3.9"
+/**
+ * AURABET AI - Script de Test & Capture UI Afrofuturiste
+ * Version résolue pour les déploiements Vercel et GitHub Actions.
+ */
+
+const { chromium } = require('playwright');
+
+(async () => {
+  // Définition de l'URL : Priorité à l'URL de déploiement, sinon fallback local
+  const targetUrl = process.env.DEPLOYMENT_URL || 'http://localhost:5173'; 
+
+  console.log(`🚀 Initialisation du test AuraBet sur : ${targetUrl}`);
+
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--no-sandbox', 
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage'
+    ]
+  });
+
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 }, // Format iPhone 12 Pro
+    deviceScaleFactor: 2,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_4 like Mac OS X) AppleWebKit/605.1.15'
+  });
+
+  const page = await browser.newPage();
+
+  try {
+    console.log("📡 Connexion au serveur...");
+    const response = await page.goto(targetUrl, { 
+      waitUntil: 'networkidle', 
+      timeout: 30000 
+    });
+
+    if (!response || response.status() >= 400) {
+      throw new Error(`Serveur injoignable (Status: ${response ? response.status() : 'OFFLINE'})`);
+    }
+
+    console.log("🧠 Vérification de l'interface (Aura Score)...");
+    // On attend que le texte "Aura Score" apparaisse dans le dashboard
+    await page.waitForSelector('text=Aura Score', { timeout: 15000 });
+
+    // Petite pause pour laisser les animations CSS se stabiliser
+    await page.waitForTimeout(2000);
+
+    console.log("📸 Génération de la capture HD...");
+    await page.screenshot({ 
+      path: 'aurabet-afrofuturism-capture.png', 
+      fullPage: false 
+    });
+
+    console.log("✅ Capture réussie : aurabet-afrofuturism-capture.png");
+
+  } catch (error) {
+    console.error(`❌ ÉCHEC : ${error.message}`);
+    if (error.message.includes('ERR_EMPTY_RESPONSE')) {
+      console.error("CONSEIL : Le serveur local est indisponible. Lancez 'npm run dev' ou définissez DEPLOYMENT_URL.");
+    }
+    process.exit(1);
+  } finally {
+    await browser.close();
   }
-}
+})();

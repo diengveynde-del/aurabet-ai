@@ -1,67 +1,75 @@
-# AURABET AI
+AURABET AI 🌍✨
 
-Application React + Tailwind au style Afrofuturiste pour paris sportifs assistés par IA.
+Application React + Tailwind au style Afrofuturiste pour les paris sportifs assistés par l'intelligence artificielle.
 
-## Stack
-- React + Vite
-- Tailwind CSS
-- Lucide Icons
-- Firebase Auth (Google + Phone) + Firestore
+🚀 Stack Technique
 
-## Fonctionnalités
-- Dashboard avec **Aura Score dynamique**.
-- Grille live **CAF / EPL** simulée avec cotes évolutives.
-- **Aura Advisor** : moteur de confiance (%) recalculé à chaque cycle.
-- Wallet multi-devises **XOF / GNF / USDT**.
-- Actions de paiement simulées : **Orange Money** et **Wave**.
-- Flux de transactions récentes.
+Frontend : React + Vite
 
-## Firebase path
-Le helper `userProfileRef` respecte la structure :
-`/artifacts/{appId}/users/{userId}/private/profile`
+Design : Tailwind CSS (Glassmorphism & Vibranium Animations)
 
-## Variables d'environnement
-Copier `.env.example` vers `.env` et renseigner les valeurs Firebase.
+Icônes : Lucide React
 
-## Run local
-```bash
+Backend : Firebase Auth (Google + Mobile) & Firestore
+
+Tests UI : Playwright
+
+✨ Fonctionnalités
+
+Dashboard Aura Score : Suivi dynamique de votre score de parieur.
+
+Grille Live CAF / EPL : Cotes évolutives en temps réel via widget.
+
+Aura Advisor : Algorithme prédictif avec indice de confiance (%) recalculé en continu.
+
+Wallet Multi-devises : Support complet pour XOF, GNF et USDT.
+
+Paiements Mobiles : Simulation d'Orange Money et Wave.
+
+📂 Structure des Données (Firestore)
+
+Le projet respecte la hiérarchie suivante pour la persistance :
+
+Public : /artifacts/{appId}/public/data/global_stats
+
+Privé : /artifacts/{appId}/users/{userId}/private/profile
+
+🛠 Installation et Développement Local
+
+Installation :
+
 npm install
+
+
+Configuration :
+Copier .env.example vers .env et renseigner les valeurs Firebase.
+
+Lancement :
+
 npm run dev
-npm run build
-```
 
-## Vérifier rapidement
-```bash
-# Vérifie que package.json est du JSON strict
+
+🧪 Validation et Tests
+
+Vérification de syntaxe
+
+Pour éviter les erreurs Vercel (Unexpected token '/'), assurez-vous que package.json ne contient aucun commentaire :
+
 node scripts/check-package-json.mjs
 
-# Exécute les tests unitaires (sans dépendre de vite)
-node --test test/*.test.js
-```
 
-## CI + Déploiement GitHub
-- Workflow CI : `.github/workflows/ci.yml`
-- Workflow déploiement GitHub Pages : `.github/workflows/deploy-pages.yml`
+Capture UI Afrofuturiste (Playwright)
 
-Le déploiement Pages est déclenché sur `push` vers `main`.
-Le `base` Vite est injecté automatiquement avec `VITE_APP_BASE=/<repo>/` pendant le build CI.
+Générez une capture d'écran haute définition du tableau de bord :
 
-## Capture UI Afrofuturiste (Playwright)
-```bash
-# Utilise DEPLOYMENT_URL si défini, sinon https://aurabet-ai.vercel.app
+# Utilise DEPLOYMENT_URL si défini, sinon [https://aurabet-ai.vercel.app](https://aurabet-ai.vercel.app)
 node scripts/capture-afrofuturism.mjs
-```
 
-Exemple avec URL spécifique:
-```bash
-DEPLOYMENT_URL=http://127.0.0.1:5173 node scripts/capture-afrofuturism.mjs
-```
 
-Le script produit `aurabet-afrofuturism-capture.png` à la racine du projet.
+🤖 CI/CD
 
-## Diagnostic Vercel package.json
-Si Vercel retourne `Unexpected token '/'` sur `package.json`, vérifier la syntaxe JSON stricte (sans commentaires `//` ou `/** */`) :
+Workflow CI : .github/workflows/ci.yml (Validation PR et syntaxe).
 
-```bash
-node scripts/check-package-json.mjs
-```
+Déploiement : Déclenchement automatique vers GitHub Pages ou Vercel sur push vers main.
+
+Note : Si vous rencontrez des erreurs de proxy lors de l'installation, utilisez : env -u http_proxy -u https_proxy npm install.
