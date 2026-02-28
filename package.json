@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "firebase": "^11.6.1",
-    "lucide": "^0.475.0",
     "lucide-react": "^0.475.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
@@ -12,12 +11,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "doctor": "bash scripts/env-doctor.sh",
-    "test:unit": "node --test test/*.test.js",
-    "capture:ui": "node scripts/capture-afrofuturism.mjs",
-    "check:package": "node scripts/check-package-json.mjs",
-    "ci:verify": "npm run check:package && npm run test:unit"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
@@ -27,6 +21,5 @@
     "postcss": "^8.4.24",
     "tailwindcss": "^3.3.2",
     "vite": "^4.3.9"
-  },
-  "type": "module"
+  }
 }
