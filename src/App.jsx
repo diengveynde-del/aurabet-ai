@@ -1,0 +1,397 @@
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import {
+  Activity,
+  BrainCircuit,
+  CircleDollarSign,
+  Coins,
+  Landmark,
+  ShieldCheck,
+  Sparkles,
+  Wallet,
+  Zap,
+  Check,
+  X,
+  LayoutGrid,
+  User,
+} from 'lucide-react';
+
+const GlobalStyles = () => (
+  <style>{`
+    :root {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #170321 0%, #020202 55%, #010101 100%);
+      color: #f5f5f5;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    .glass {
+      background: linear-gradient(
+        130deg,
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.03)
+      );
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+    }
+
+    @keyframes pulse-purple {
+      0% { border-color: rgba(126, 34, 206, 0.1); }
+      50% { border-color: rgba(126, 34, 206, 0.6); }
+      100% { border-color: rgba(126, 34, 206, 0.1); }
+    }
+
+    .animate-pulse-border {
+      animation: pulse-purple 2s infinite;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  `}</style>
+);
+
+const resolveFirebaseConfig = () => {
+  if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+    try {
+      return JSON.parse(__firebase_config);
+    } catch (error) {
+      console.error('Configuration Firebase injectée invalide:', error);
+    }
+  }
+
+  let env = {};
+  try {
+    env = typeof process !== 'undefined' ? process.env : import.meta.env || {};
+  } catch (_e) {
+    env = {};
+  }
+
+  return {
+    apiKey: env.VITE_FIREBASE_API_KEY || '',
+    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || '',
+    projectId: env.VITE_FIREBASE_PROJECT_ID || '',
+    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: env.VITE_FIREBASE_APP_ID || '',
+  };
+};
+
+const firebaseConfig = resolveFirebaseConfig();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'aurabet-ai-v1';
+
+const walletSeed = [
+  { currency: 'XOF', amount: 920000, symbol: 'FCFA', icon: Landmark },
+  { currency: 'GNF', amount: 7100000, symbol: 'FG', icon: Coins },
+  { currency: 'USDT', amount: 2430.9, symbol: 'USDT', icon: CircleDollarSign },
+];
+
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState({ balance: 15000, auraScore: 700 });
+  const [betSlip, setBetSlip] = useState({ active: false, team: '', odd: 1.85, amount: 1000 });
+  const [toast, setToast] = useState(null);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState('XOF');
+  const [walletBalances, setWalletBalances] = useState(walletSeed);
+  const widgetContainerRef = useRef(null);
+
+  useEffect(() => {
+    const scriptId = 'api-sports-widget-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://widgets.api-sports.io/football/1.1.8/widget.js';
+      script.type = 'module';
+      script.onload = () => setScriptLoaded(true);
+      document.head.appendChild(script);
+    } else {
+      setScriptLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.error('Erreur Auth:', err);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'private', 'profile');
+
+    const unsubscribe = onSnapshot(
+      profileRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setProfile(data);
+          setWalletBalances((prev) => prev.map((w) => (w.currency === 'XOF' ? { ...w, amount: data.balance } : w)));
+        } else {
+          setDoc(profileRef, { balance: 15000, auraScore: 700 });
+        }
+      },
+      (error) => console.error('Erreur Firestore:', error),
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const potentialGain = useMemo(() => Math.floor(betSlip.amount * betSlip.odd), [betSlip.amount, betSlip.odd]);
+
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const confirmBet = async () => {
+    if (!user) return;
+    if (betSlip.amount > profile.balance) {
+      showToast('Solde insuffisant !');
+      return;
+    }
+    const newBalance = profile.balance - betSlip.amount;
+    const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'private', 'profile');
+
+    try {
+      await setDoc(profileRef, { ...profile, balance: newBalance }, { merge: true });
+      showToast(`Pari de ${betSlip.amount} XOF validé via Widget API !`);
+      setBetSlip((prev) => ({ ...prev, active: false }));
+    } catch (_e) {
+      showToast('Erreur lors de la validation.');
+    }
+  };
+
+  if (!user)
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
+        <GlobalStyles />
+        <div className="w-12 h-12 border-4 border-[#7e22ce] border-t-transparent rounded-full animate-spin" />
+        <div className="text-[#7e22ce] font-black uppercase tracking-[0.3em] text-[10px]">SYNC AURA EN COURS...</div>
+      </div>
+    );
+
+  return (
+    <div className="min-h-screen bg-[#020202] text-white font-sans pb-32 overflow-x-hidden">
+      <GlobalStyles />
+
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-[#7e22ce] text-white px-6 py-3 rounded-full font-bold text-[10px] uppercase tracking-widest z-[100] shadow-[0_0_30px_rgba(126,34,206,0.5)] animate-bounce">
+          {toast}
+        </div>
+      )}
+
+      <header className="flex justify-between items-center p-6 border-b border-[#7e22ce]/20 bg-[#020202]/80 sticky top-0 z-50 backdrop-blur-xl">
+        <div className="flex flex-col">
+          <p className="mb-1 inline-flex items-center gap-2 text-[7px] font-semibold uppercase tracking-[0.2em] text-[#22d3ee]">
+            <Sparkles size={10} /> IA de Pari Afrofuturiste
+          </p>
+          <h1 className="text-2xl font-black tracking-tighter italic uppercase leading-none">
+            AURA<span className="text-[#7e22ce]">BET</span>
+          </h1>
+        </div>
+
+        <div className="bg-[#111] border border-[#7e22ce]/40 rounded-2xl px-4 py-2 flex flex-col items-end">
+          <span className="text-[8px] font-bold uppercase tracking-widest text-[#7e22ce]">Aura Score</span>
+          <span className="text-lg font-black leading-none">{profile.auraScore}</span>
+        </div>
+      </header>
+
+      <main className="p-4 space-y-6 max-w-5xl mx-auto">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="bg-gradient-to-br from-[#121212] to-[#050505] border border-[#7e22ce]/20 rounded-[2rem] p-6 relative overflow-hidden group shadow-2xl animate-pulse-border">
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#7e22ce]/5 blur-[100px] rounded-full" />
+            <div className="flex items-center gap-3 mb-5">
+              <div className="bg-[#fbbf24]/10 p-2.5 rounded-2xl text-[#fbbf24] border border-[#fbbf24]/20">
+                <BrainCircuit size={20} />
+              </div>
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Conseiller Aura</h2>
+            </div>
+            <p className="text-lg font-bold leading-[1.2] mb-6 italic tracking-tight text-white/95">
+              "Le flux live détecte une forte volatilité sur la <span className="text-[#22d3ee]">CAF League</span>. L'algorithme suggère de
+              rester prudent."
+            </p>
+            <button
+              onClick={() => setBetSlip((prev) => ({ ...prev, active: true, team: 'Pari IA' }))}
+              className="w-full bg-[#7e22ce] text-white font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(126,34,206,0.4)] transition-all"
+            >
+              <Zap size={14} fill="currentColor" /> Coupon Rapide
+            </button>
+          </section>
+
+          <section className="bg-[#0a0a0a] border border-white/5 rounded-[2rem] p-6 glass">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
+                <Wallet className="text-[#fbbf24]" size={18} /> Portefeuille
+              </h2>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {walletBalances.map(({ currency, amount, symbol, icon: IconComponent }) => (
+                <button
+                  key={currency}
+                  onClick={() => setSelectedCurrency(currency)}
+                  className={`p-3 rounded-2xl text-left border transition-all ${
+                    selectedCurrency === currency
+                      ? 'border-[#7e22ce] bg-[#7e22ce]/10 shadow-[0_0_15px_rgba(126,34,206,0.2)]'
+                      : 'border-white/5 bg-white/5'
+                  }`}
+                >
+                  <IconComponent size={14} className="mb-2 text-[#fbbf24]" />
+                  <p className="text-[10px] font-bold opacity-40">{currency}</p>
+                  <p className="text-xs font-black truncate">
+                    {amount.toLocaleString()} {symbol}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <section className="space-y-4">
+          <div className="flex justify-between items-center px-2">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">
+              Flux Live <span className="text-[#7e22ce]">API-Sports</span>
+            </h3>
+            <span className="text-[9px] text-[#22d3ee] font-black uppercase animate-pulse flex items-center gap-2">
+              <Activity size={10} /> Temps Réel
+            </span>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden min-h-[500px] glass">
+              <div
+                ref={widgetContainerRef}
+                id="wg-api-football-livescore"
+                data-host="v3.football.api-sports.io"
+                data-key="e43f43300b5b692c2829ea3796642c3d"
+                data-type="livescore"
+                data-refresh="60"
+                data-theme="dark"
+                className="api_sports_widget"
+              />
+              {!scriptLoaded && (
+                <div className="flex items-center justify-center h-48 text-white/20 text-[10px] uppercase font-bold tracking-widest animate-pulse">
+                  Connexion aux flux satellite...
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden p-4 glass">
+                <div
+                  id="wg-api-football-leagues"
+                  data-host="v3.football.api-sports.io"
+                  data-key="e43f43300b5b692c2829ea3796642c3d"
+                  data-type="leagues"
+                  data-theme="dark"
+                  className="api_sports_widget"
+                />
+              </div>
+
+              <div className="bg-white/5 border border-[#7e22ce]/20 rounded-[2.5rem] p-6 text-[10px] text-zinc-400 glass">
+                <div className="flex items-center gap-2 text-[#fbbf24] mb-2 font-bold uppercase tracking-widest">
+                  <ShieldCheck size={14} /> Sécurité Blockchain
+                </div>
+                <p>Les transactions sont sécurisées sur le réseau décentralisé Aurabet via protocole VIBRANIUM.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {betSlip.active && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[55] flex items-end sm:items-center justify-center p-4"
+          onClick={() => setBetSlip((prev) => ({ ...prev, active: false }))}
+        >
+          <div
+            className="bg-[#0f0f0f] w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl border border-[#7e22ce]/30"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-8">
+              <h4 className="font-black text-xs uppercase tracking-[0.2em] italic text-[#22d3ee]">Coupon de Pari Pro</h4>
+              <button onClick={() => setBetSlip((prev) => ({ ...prev, active: false }))} className="bg-white/5 p-2 rounded-full text-white/40">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="bg-white/5 p-5 rounded-3xl mb-8 border border-white/5">
+              <p className="text-xl font-black italic text-white uppercase tracking-tighter">Mise Intelligente</p>
+              <div className="flex justify-between mt-2">
+                <p className="text-[10px] text-[#7e22ce] font-black uppercase">Cote Actuelle: {betSlip.odd}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 mb-8">
+              <div className="flex-[2] bg-black border border-white/10 rounded-3xl px-5 py-5 relative">
+                <span className="absolute top-2 left-5 text-[8px] text-white/30 font-black uppercase tracking-widest">Mise</span>
+                <input
+                  type="number"
+                  value={betSlip.amount}
+                  onChange={(e) => setBetSlip((prev) => ({ ...prev, amount: parseInt(e.target.value, 10) || 0 }))}
+                  className="w-full bg-transparent text-2xl font-black focus:outline-none pt-3 text-white"
+                />
+              </div>
+              <div className="flex-[1] bg-white/5 border border-white/5 rounded-3xl px-4 py-5 text-center flex flex-col justify-center">
+                <span className="text-[8px] text-[#fbbf24] font-black uppercase tracking-widest">Gain Est.</span>
+                <p className="text-sm font-black italic mt-1">{potentialGain.toLocaleString()} F</p>
+              </div>
+            </div>
+
+            <button
+              onClick={confirmBet}
+              className="w-full py-5 bg-[#7e22ce] text-white font-black rounded-3xl uppercase text-[11px] tracking-[0.3em] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all"
+            >
+              <Check size={18} /> Valider le Pari
+            </button>
+          </div>
+        </div>
+      )}
+
+      <nav className="fixed bottom-0 left-0 right-0 bg-[#020202]/90 backdrop-blur-3xl border-t border-white/5 p-4 pb-8 z-[50]">
+        <div className="max-w-md mx-auto flex justify-around items-center">
+          <NavBtn icon={<LayoutGrid size={20} />} label="Menu" active />
+          <NavBtn icon={<Zap size={20} />} label="Live" />
+          <div className="relative -mt-14">
+            <button className="bg-gradient-to-tr from-[#7e22ce] to-[#22d3ee] w-14 h-14 rounded-full flex items-center justify-center border-[4px] border-[#020202] shadow-2xl relative z-10 text-white">
+              <ShieldCheck size={28} />
+            </button>
+          </div>
+          <NavBtn icon={<Wallet size={20} />} label="Banque" />
+          <NavBtn icon={<User size={20} />} label="Moi" />
+        </div>
+      </nav>
+    </div>
+  );
+};
+
+const NavBtn = ({ icon, label, active = false }) => (
+  <button className={`flex flex-col items-center gap-1.5 ${active ? 'text-[#22d3ee]' : 'text-white/20'}`}>
+    {icon}
+    <span className="text-[7px] font-black uppercase italic tracking-[0.2em]">{label}</span>
+  </button>
+);
+
+export default App;
